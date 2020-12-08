@@ -1,0 +1,22 @@
+basePath: /admin/
+host: localhost:8181
+info:
+  contact: {}
+  description: Various administrative functions for the API-gateway and k8s cluster
+  title: NHN API Admin Service
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - application/json
+      description: Say hello
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ""
+        "400":
+          description: ""
+      summary: Say hello
+swagger: "2.0"
