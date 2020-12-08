@@ -17,8 +17,18 @@ import (
 // @BasePath /admin/
 func main() {
 	router := mux.NewRouter()
-	router.HandleFunc("/admin/", RootHandler).Methods("GET")
+	router.StrictSlash(true)
+
+	router.HandleFunc("/admin/", SwaggerRedirect)
+	router.HandleFunc("/admin/docs/", SwaggerRedirect)
 	router.PathPrefix("/admin/docs").Handler(httpSwagger.WrapHandler)
+
 	var portNumber = 8181
+	fmt.Printf("Starting http listener on port %d ...\n", portNumber)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNumber), router))
+}
+
+// SwaggerRedirect redirects HTTP request to Swagger docs
+func SwaggerRedirect(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/admin/docs/index.html", http.StatusPermanentRedirect)
 }
