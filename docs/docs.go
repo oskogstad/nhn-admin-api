@@ -24,16 +24,25 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/": {
-            "get": {
-                "description": "Say hello",
+        "/api/new": {
+            "post": {
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Say hello",
+                "parameters": [
+                    {
+                        "description": "Service info",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.Service"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": ""
@@ -41,6 +50,25 @@ var doc = `{
                     "400": {
                         "description": ""
                     }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.Service": {
+            "type": "object",
+            "properties": {
+                "apibaseEndpoint": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "ociImage": {
+                    "type": "string"
+                },
+                "port": {
+                    "type": "integer"
                 }
             }
         }

@@ -1,4 +1,16 @@
 basePath: /admin/
+definitions:
+  main.Service:
+    properties:
+      apibaseEndpoint:
+        type: string
+      name:
+        type: string
+      ociImage:
+        type: string
+      port:
+        type: integer
+    type: object
 host: localhost:8181
 info:
   contact: {}
@@ -6,11 +18,17 @@ info:
   title: NHN API Admin Service
   version: "1.0"
 paths:
-  /:
-    get:
+  /api/new:
+    post:
       consumes:
       - application/json
-      description: Say hello
+      parameters:
+      - description: Service info
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/main.Service'
       produces:
       - application/json
       responses:
@@ -18,5 +36,4 @@ paths:
           description: ""
         "400":
           description: ""
-      summary: Say hello
 swagger: "2.0"

@@ -1,18 +1,44 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
+	"regexp"
 )
 
-// RootHandler godoc
-// @Summary Say hello
-// @Description Say hello
+// Service ...
+type Service struct {
+	Name            string
+	Port            int
+	APIBaseEndpoint string
+	OciImage        string
+}
+
+// IsValidName checks if a string contains only asci letters , a-zA-Z
+var IsValidName = regexp.MustCompile(`^[a-zA-Z]+$`).MatchString
+
+// NewAPIRegistration ...
+// @Sumary Register new API
 // @Accept json
+// @Param data body main.Service true "Service info"
 // @Produce json
-// @Success 201
+// @success 201
 // @Failure 400
-// @Router / [get]
-func RootHandler(responseWriter http.ResponseWriter, r *http.Request) {
-	responseWriter.Header().Set("Server", "A Go Web Server")
-	responseWriter.Write([]byte("Hello, Go"))
+// @Router /api/new [post]
+func NewAPIRegistration(responseWriter http.ResponseWriter, request *http.Request) {
+	var service Service
+
+	err := json.NewDecoder(request.Body).Decode(&service)
+	if err != nil {
+		http.Error(responseWriter, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if !IsValidName(service.APIBaseEndpoint) || !IsValidName(service.Name) {
+		http.Error(responseWriter, "Invalid name/endpoint, must match \"^[a-zA-Z]+$\"", http.StatusBadRequest)
+		return
+	}
+
+	CreateNewServiceConfig(service)
+	responseWriter.Write([]byte(service.Name + " created"))
 }
