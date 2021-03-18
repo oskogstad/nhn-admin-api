@@ -32,7 +32,7 @@ func main() {
 	router.HandleFunc("/admin/docs/", SwaggerRedirect).Methods("GET")
 	router.PathPrefix("/admin/docs").Handler(httpSwagger.WrapHandler).Methods("GET")
 
-	var portNumber = 8181
+	var portNumber = 80
 	fmt.Printf("Starting http listener on port %d ...\n", portNumber)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", portNumber), router))
 }
