@@ -22,6 +22,21 @@ var gitRepoName, gitRepoNameFound = os.LookupEnv("NHN_K8S_GIT_REPO_NAME")
 var gitUserName, gitUserNameFound = os.LookupEnv("NHN_GIT_USERNAME")
 var gitAccessToken, gitTokenFound = os.LookupEnv("NHN_GIT_ACCESS_TOKEN")
 
+var fileSystem = memfs.New()
+var gitRepo *git.Repository
+var auth *git_http.BasicAuth
+
+func GitSetup() bool {
+	if !EnsureGitEnvFound() {
+		return false
+	}
+
+	CreateAuth()
+	CloneRepo()
+
+	return true
+}
+
 // EnsureGitEnvFound checks that git environment variables are found, Access token and repo URL
 func EnsureGitEnvFound() bool {
 	if !gitUrlFound || !gitTokenFound || !gitRepoNameFound || !gitUserNameFound {
@@ -35,23 +50,28 @@ func EnsureGitEnvFound() bool {
 	return true
 }
 
-// CreateNewServiceConfig creates a new pull request with config files for a new microservice
-func CreateNewServiceConfig(service Service) {
-	auth := &git_http.BasicAuth{
+func CreateAuth() {
+	auth = &git_http.BasicAuth{
 		Username: "any string except empty",
 		Password: gitAccessToken,
 	}
+}
 
-	fileSystem := memfs.New()
-
+func CloneRepo() bool {
 	console.Green("git clone " + gitRepoURL)
-	gitRepo, err := git.Clone(memory.NewStorage(), fileSystem, &git.CloneOptions{
+	var err error
+	gitRepo, err = git.Clone(memory.NewStorage(), fileSystem, &git.CloneOptions{
 		URL:      gitRepoURL,
 		Progress: os.Stdout,
 		Auth:     auth,
 	})
-	CheckIfError(err)
 
+	CheckIfError(err)
+	return true
+}
+
+// CreateNewServiceConfig creates a new pull request with config files for a new microservice
+func CreateNewServiceConfig(service Service) {
 	workTree, err := gitRepo.Worktree()
 	CheckIfError(err)
 
@@ -84,7 +104,7 @@ func CreateNewServiceConfig(service Service) {
 		When:  time.Now(),
 	}})
 
-	err = gitRepo.Push(&git.PushOptions{Auth: auth, Force: true,})
+	err = gitRepo.Push(&git.PushOptions{Auth: auth, Force: true})
 	CheckIfError(err)
 
 	// Create PR

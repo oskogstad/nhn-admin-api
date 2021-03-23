@@ -14,10 +14,10 @@ import (
 // @title NHN API Admin Service
 // @description Various administrative functions for the API-gateway and k8s cluster
 // @version 1.0
-// @host localhost:8181
+// @host localhost:80
 // @BasePath /admin/
 func main() {
-	if !EnsureGitEnvFound() {
+	if !GitSetup() {
 		os.Exit(1)
 	}
 
