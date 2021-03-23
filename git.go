@@ -75,9 +75,18 @@ func CreateNewServiceConfig(service Service) {
 	workTree, err := gitRepo.Worktree()
 	CheckIfError(err)
 
+	mainBranch := plumbing.ReferenceName("refs/heads/main")
+
+	console.Green("git checkout main")
+	err = workTree.Checkout(&git.CheckoutOptions{
+		Create: false,
+		Branch: mainBranch,
+	})
+	CheckIfError(err)
+
 	branchRef := plumbing.ReferenceName("refs/heads/" + service.Name)
 
-	console.Green("Create branch: " + service.Name)
+	console.Green("git checkout -b " + service.Name)
 	err = workTree.Checkout(&git.CheckoutOptions{
 		Create: true,
 		Branch: branchRef,
