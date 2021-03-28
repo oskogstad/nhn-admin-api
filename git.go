@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"time"
 
@@ -70,6 +69,17 @@ func CloneRepo() bool {
 	return true
 }
 
+func CreateFile(path string, fileContent []byte) string {
+	filePath := path
+	file, err := fileSystem.Create(filePath)
+	CheckIfError(err)
+
+	file.Write(fileContent)
+	file.Close()
+
+	return filePath
+}
+
 // CreateNewServiceConfig creates a new pull request with config files for a new microservice
 func CreateNewServiceConfig(service Service) {
 	workTree, err := gitRepo.Worktree()
@@ -84,6 +94,11 @@ func CreateNewServiceConfig(service Service) {
 	})
 	CheckIfError(err)
 
+	console.Green("git pull")
+	workTree.Pull(&git.PullOptions{
+		Auth: auth,
+	})
+
 	branchRef := plumbing.ReferenceName("refs/heads/" + service.Name)
 
 	console.Green("git checkout -b " + service.Name)
@@ -94,18 +109,13 @@ func CreateNewServiceConfig(service Service) {
 
 	CheckIfError(err)
 
-	filePath := "api/" + service.Name + "/" + "config-" + service.Name + ".yaml"
-	newFile, err := fileSystem.Create(filePath)
-	CheckIfError(err)
+	helmFileContent := CreateHelmValuesFile(service)
+	helmFilePath := CreateFile("app/"+service.GatewayEndpoint+"/"+service.Name+"-helm-values.yaml", helmFileContent)
+	workTree.Add(helmFilePath)
 
-	newFile.Write([]byte("Config for service " + service.Name))
-	newFile.Write([]byte("\nService name: " + service.Name))
-	newFile.Write([]byte("\nAPI endpoint: " + service.APIBaseEndpoint))
-	newFile.Write([]byte("\nOCI Image: " + service.OciImage))
-	newFile.Write([]byte("\nPort: " + fmt.Sprint(service.Port)))
-	newFile.Close()
-
-	workTree.Add(filePath)
+	argoFileContent := CreateArgoAppFile(service)
+	argoFilePath := CreateFile("argocd/apps/"+service.GatewayEndpoint+"/values.yaml", argoFileContent)
+	workTree.Add(argoFilePath)
 
 	workTree.Commit("Add service config for "+service.Name, &git.CommitOptions{Author: &object.Signature{
 		Name:  "Adminservice",
@@ -125,13 +135,14 @@ func CreateNewServiceConfig(service Service) {
 
 	githubClient := github.NewClient(oauthClient)
 	newPR := &github.NewPullRequest{
-		Title:               github.String("New k8s service: " + service.Name),
+		Title:               github.String("New kubernetes deployment: " + service.Name),
 		Head:                github.String(service.Name),
 		Base:                github.String("main"),
-		Body:                github.String("Automated PR for new microservice " + service.Name),
+		Body:                github.String("Automated PR for application " + service.Name),
 		MaintainerCanModify: github.Bool(true),
 	}
 
 	_, _, err = githubClient.PullRequests.Create(context, gitUserName, gitRepoName, newPR)
 	CheckIfError(err)
+	console.Yellow("PR created")
 }

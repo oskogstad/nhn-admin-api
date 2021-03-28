@@ -8,10 +8,11 @@ import (
 
 // Service ...
 type Service struct {
-	Name            string
-	Port            int
-	APIBaseEndpoint string
-	OciImage        string
+	Name                string
+	Port                int
+	GatewayEndpoint     string
+	ContainerRepository string
+	ImageTag            string
 }
 
 // IsValidName checks if a string contains only asci letters , a-zA-Z
@@ -34,7 +35,7 @@ func NewAPIRegistration(responseWriter http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	if !IsValidName(service.APIBaseEndpoint) || !IsValidName(service.Name) {
+	if !IsValidName(service.GatewayEndpoint) || !IsValidName(service.Name) {
 		http.Error(responseWriter, "Invalid name/endpoint, must match \"^[a-zA-Z]+$\"", http.StatusBadRequest)
 		return
 	}
