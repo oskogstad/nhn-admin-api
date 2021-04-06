@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
+	"strings"
 	"time"
 
 	console "github.com/fatih/color"
@@ -56,7 +58,7 @@ func CreateAuth() {
 	}
 }
 
-func CloneRepo() bool {
+func CloneRepo() {
 	console.Green("git clone " + gitRepoURL)
 	var err error
 	gitRepo, err = git.Clone(memory.NewStorage(), fileSystem, &git.CloneOptions{
@@ -65,14 +67,13 @@ func CloneRepo() bool {
 		Auth:     auth,
 	})
 
-	CheckIfError(err)
-	return true
+	PanicIfError(err)
 }
 
 func CreateFile(path string, fileContent []byte) string {
 	filePath := path
 	file, err := fileSystem.Create(filePath)
-	CheckIfError(err)
+	PanicIfError(err)
 
 	file.Write(fileContent)
 	file.Close()
@@ -80,10 +81,9 @@ func CreateFile(path string, fileContent []byte) string {
 	return filePath
 }
 
-// CreateNewServiceConfig creates a new pull request with config files for a new microservice
-func CreateNewServiceConfig(service Service) {
+func CheckoutLatestMainBranch() *git.Worktree {
 	workTree, err := gitRepo.Worktree()
-	CheckIfError(err)
+	PanicIfError(err)
 
 	mainBranch := plumbing.ReferenceName("refs/heads/main")
 
@@ -92,22 +92,45 @@ func CreateNewServiceConfig(service Service) {
 		Create: false,
 		Branch: mainBranch,
 	})
-	CheckIfError(err)
+	PanicIfError(err)
 
 	console.Green("git pull")
 	workTree.Pull(&git.PullOptions{
 		Auth: auth,
 	})
 
-	branchRef := plumbing.ReferenceName("refs/heads/" + service.Name)
+	return workTree
+}
 
-	console.Green("git checkout -b " + service.Name)
-	err = workTree.Checkout(&git.CheckoutOptions{
+func CreateBranch(branchName string, workTree *git.Worktree) error {
+	branchRef := plumbing.ReferenceName("refs/heads/" + branchName)
+
+	console.Green("git checkout -b " + branchName)
+	err := workTree.Checkout(&git.CheckoutOptions{
 		Create: true,
 		Branch: branchRef,
 	})
 
-	CheckIfError(err)
+	return err
+}
+
+// CreateNewServiceConfig creates a new pull request with config files for a new microservice
+func CreateNewServiceConfig(service Service) error {
+	workTree := CheckoutLatestMainBranch()
+
+	appFolder, err := fileSystem.ReadDir("/app/" + service.GatewayEndpoint)
+	if appFolder != nil {
+		return errors.New("Config files already exists for gateway endpoint '" + service.GatewayEndpoint + "'")
+	}
+	PanicIfError(err)
+
+	err = CreateBranch(service.Name, workTree)
+	if err != nil {
+		if strings.Compare("a branch named \"refs/heads/"+service.Name+"\" already exists", err.Error()) == 0 {
+			return err
+		}
+		PanicIfError(err)
+	}
 
 	helmFileContent := CreateHelmValuesFile(service)
 	helmFilePath := CreateFile("app/"+service.GatewayEndpoint+"/"+service.Name+"-helm-values.yaml", helmFileContent)
@@ -124,7 +147,7 @@ func CreateNewServiceConfig(service Service) {
 	}})
 
 	err = gitRepo.Push(&git.PushOptions{Auth: auth, Force: true})
-	CheckIfError(err)
+	PanicIfError(err)
 
 	// Create PR
 	context := context.Background()
@@ -143,6 +166,8 @@ func CreateNewServiceConfig(service Service) {
 	}
 
 	_, _, err = githubClient.PullRequests.Create(context, gitUserName, gitRepoName, newPR)
-	CheckIfError(err)
+	PanicIfError(err)
 	console.Yellow("PR created")
+
+	return nil
 }

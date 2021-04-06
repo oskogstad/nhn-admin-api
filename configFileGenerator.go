@@ -37,7 +37,7 @@ func CreateHelmValuesFile(service Service) []byte {
 	}
 
 	bytes, err := yaml.Marshal(helmValuesFile)
-	CheckIfError(err)
+	PanicIfError(err)
 
 	return bytes
 }
@@ -54,7 +54,7 @@ func CreateArgoAppFile(service Service) []byte {
 	}
 
 	bytes, err := yaml.Marshal(argoAppValuesFile)
-	CheckIfError(err)
+	PanicIfError(err)
 
 	return bytes
 }

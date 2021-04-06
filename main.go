@@ -48,8 +48,8 @@ func NotFound(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<html>404 not found 🙈 <br /><a href=\"/admin/docs/index.html\">API docs</a> 📜</html>")
 }
 
-// CheckIfError should be used to naively panics if an error is not nil.
-func CheckIfError(err error) {
+// PanicIfError should be used to naively panics if an error is not nil.
+func PanicIfError(err error) {
 	if err == nil {
 		return
 	}

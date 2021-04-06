@@ -40,6 +40,11 @@ func NewAPIRegistration(responseWriter http.ResponseWriter, request *http.Reques
 		return
 	}
 
-	CreateNewServiceConfig(service)
+	err = CreateNewServiceConfig(service)
+	if err != nil {
+		http.Error(responseWriter, err.Error(), http.StatusConflict)
+		return
+	}
+
 	responseWriter.Write([]byte(service.Name + " created"))
 }
