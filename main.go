@@ -27,10 +27,9 @@ func main() {
 	router.NotFoundHandler = http.HandlerFunc(NotFound)
 
 	router.HandleFunc("/", SwaggerRedirect)
-	router.HandleFunc("/admin/api/new", NewAPIRegistration).Methods("POST")
-	router.HandleFunc("/admin/", SwaggerRedirect).Methods("GET")
-	router.HandleFunc("/admin/docs/", SwaggerRedirect).Methods("GET")
-	router.PathPrefix("/admin/docs").Handler(httpSwagger.WrapHandler).Methods("GET")
+	router.HandleFunc("/api/new", NewAPIRegistration).Methods("POST")
+	router.HandleFunc("/docs/", SwaggerRedirect).Methods("GET")
+	router.PathPrefix("/docs").Handler(httpSwagger.WrapHandler).Methods("GET")
 
 	var portNumber = 80
 	fmt.Printf("Starting http listener on port %d ...\n", portNumber)
@@ -39,7 +38,7 @@ func main() {
 
 // SwaggerRedirect redirects HTTP request to Swagger docs
 func SwaggerRedirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/admin/docs/index.html", http.StatusPermanentRedirect)
+	http.Redirect(w, r, "/docs/index.html", http.StatusPermanentRedirect)
 }
 
 // NotFound ...
